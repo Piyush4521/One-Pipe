@@ -9,13 +9,15 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check-env": "tsx src/config/env.ts"
   },
   "dependencies": {
     "cors": "2.8.5",
     "dotenv": "16.4.7",
     "express": "4.22.3",
     "helmet": "8.0.0",
+    "mongoose": "8.24.7",
     "pino": "9.6.0",
     "pino-http": "10.4.0",
     "ws": "8.22.1",

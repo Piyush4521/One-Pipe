@@ -25,6 +25,8 @@ router.post('/commands', requireOperatorAuthority, movementSafetyLockout);
  * The response explicitly clarifies that software cannot confirm physical motor cutoff
  * and that the chassis button remains the primary safety mechanism.
  */
-router.post('/emergency-stop', (req, res) => robotController.emergencyStop(req, res));
+router.post('/emergency-stop', (req, res, next) =>
+  Promise.resolve(robotController.emergencyStop(req, res)).catch(next)
+);
 
 export default router;

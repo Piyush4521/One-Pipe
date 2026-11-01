@@ -4,7 +4,12 @@
  * Abstract repository contracts decoupling domain services from underlying storage engine (Stage 3).
  */
 
-import { DefectFilter, DefectRecord, UpdateDefectReviewDTO } from './defect.interface';
+import {
+  DefectFilter,
+  DefectRecord,
+  DefectStats,
+  UpdateDefectReviewDTO,
+} from './defect.interface';
 import {
   CreateInspectionDTO,
   InspectionFilter,
@@ -14,6 +19,18 @@ import {
 } from './inspection.interface';
 import { PaginatedResult } from './pagination.interface';
 import { ReportRecord } from './report.interface';
+import {
+  CreateSystemEventDTO,
+  SystemEventFilter,
+  SystemEventRecord,
+} from './system-event.interface';
+import {
+  BatchIngestResult,
+  PersistedTelemetryRecord,
+  TelemetryFilter,
+  TelemetrySampleDTO,
+  TelemetrySessionSummary,
+} from './telemetry.interface';
 
 export interface IInspectionRepository {
   findById(id: string): Promise<InspectionRecord | null>;
@@ -28,6 +45,16 @@ export interface IDefectRepository {
   findMany(filter?: DefectFilter): Promise<PaginatedResult<DefectRecord>>;
   create(data: Omit<DefectRecord, 'id'>): Promise<DefectRecord>;
   updateReview(id: string, data: UpdateDefectReviewDTO): Promise<DefectRecord | null>;
+  updateEvidenceMetadata(
+    id: string,
+    metadata: {
+      evidenceImagePath: string;
+      evidenceFileSizeBytes: number;
+      evidenceSha256: string;
+      evidenceMimeType: string;
+    }
+  ): Promise<DefectRecord | null>;
+  getStats(): Promise<DefectStats>;
 }
 
 export interface IReportRepository {
@@ -36,4 +63,20 @@ export interface IReportRepository {
   findMany(): Promise<ReportRecord[]>;
   create(data: Omit<ReportRecord, 'id'>): Promise<ReportRecord>;
   update(id: string, data: Partial<ReportRecord>): Promise<ReportRecord | null>;
+}
+
+export interface ITelemetryRepository {
+  create(sample: TelemetrySampleDTO): Promise<PersistedTelemetryRecord>;
+  createBatch(samples: TelemetrySampleDTO[]): Promise<BatchIngestResult>;
+  findByInspectionId(
+    inspectionId: string,
+    filter?: TelemetryFilter
+  ): Promise<PaginatedResult<PersistedTelemetryRecord>>;
+  findLatestByInspectionId(inspectionId: string): Promise<PersistedTelemetryRecord | null>;
+  getSummary(inspectionId: string): Promise<TelemetrySessionSummary | null>;
+}
+
+export interface ISystemEventRepository {
+  create(data: CreateSystemEventDTO): Promise<SystemEventRecord>;
+  findMany(filter?: SystemEventFilter): Promise<PaginatedResult<SystemEventRecord>>;
 }

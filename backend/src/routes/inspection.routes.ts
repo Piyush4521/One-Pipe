@@ -47,5 +47,10 @@ router.post('/:id/complete', requireOperatorAuthority, (req, res, next) =>
   inspectionController.complete(req, res, next)
 );
 
+// POST /api/inspections/:id/backup - Operator triggers or retries post-inspection backup
+router.post('/:id/backup', requireOperatorAuthority, (req, res, next) =>
+  inspectionController.retryBackup(req, res, next)
+);
+
 export default router;
 

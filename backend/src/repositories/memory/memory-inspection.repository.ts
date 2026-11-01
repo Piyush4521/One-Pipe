@@ -64,11 +64,14 @@ export class MemoryInspectionRepository implements IInspectionRepository {
       conduitName: data.conduitName,
       operatorNotes: data.operatorNotes,
       startTimestamp: now,
-      totalDistanceMeters: 0,
+      totalDistanceMeters: null,
       defectCount: 0,
       status: 'ready',
       reportGenerated: false,
       backupVerified: false,
+      backupStatus: 'not_started',
+      backupId: null,
+      backupError: null,
     };
 
     this.records.set(id, record);

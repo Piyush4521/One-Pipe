@@ -4,6 +4,7 @@
  */
 
 import { Request, Response } from 'express';
+import { auditLogService } from '../services/container';
 import { robotService } from '../services/robot.service';
 import { sendSuccess } from '../utils/response';
 import { eventBroadcaster } from '../websocket/ws-broadcaster';
@@ -22,10 +23,18 @@ export class RobotController {
    * POST /api/robot/emergency-stop
    * Auxiliary software emergency stop request handler.
    */
-  public emergencyStop(_req: Request, res: Response): void {
+  public async emergencyStop(_req: Request, res: Response): Promise<void> {
     const data = robotService.processSoftwareEmergencyStop();
     eventBroadcaster.broadcastEmergencyStopAck(data);
-    sendSuccess(res, data, 200);
+    const auditResult = await auditLogService.logEmergencyStop(
+      'operator_software_request',
+      { action: 'software_emergency_stop' }
+    );
+    const responsePayload = {
+      ...data,
+      auditPersisted: auditResult.auditPersisted,
+    };
+    sendSuccess(res, responsePayload, 200);
   }
 }
 

@@ -123,6 +123,15 @@ export class InspectionController {
       next(err);
     }
   }
+
+  public async retryBackup(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const manifest = await inspectionService.retryInspectionBackup(req.params.id as string);
+      sendSuccess(res, { manifest }, 200);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const inspectionController = new InspectionController();

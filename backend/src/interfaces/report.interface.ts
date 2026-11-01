@@ -17,6 +17,7 @@ export interface ReportRecord {
   totalDistanceMeters: number | null; // null until compiled from verified data
   defectCount: number | null;         // null until compiled from verified data
   pdfRelativePath: string | null;     // null until PDF file exists on disk
+  pdfSha256?: string | null;          // SHA-256 hash of generated report PDF
   backupVerified: boolean;
   errorMessage?: string;
   note?: string;

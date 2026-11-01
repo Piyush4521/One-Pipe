@@ -20,6 +20,7 @@
  */
 
 import { RobotConnectionState } from './robot-connection.interface';
+import { PaginationParams } from './pagination.interface';
 
 export interface Mpu6050Readings {
   accelX: number | null;
@@ -73,3 +74,53 @@ export const UNAVAILABLE_TELEMETRY_SNAPSHOT: TelemetrySnapshot = {
   isStale: true,
   notes: 'No hardware telemetry producer is attached. Derived values require mechanical calibration in Stage 5.',
 };
+
+export interface PersistedTelemetryRecord extends TelemetrySnapshot {
+  sampleId: string;
+  inspectionId: string | null;
+  createdAt?: string;
+}
+
+export interface TelemetrySampleDTO {
+  sampleId?: string;
+  inspectionId?: string | null;
+  captureTimestamp?: string | Date;
+  sequenceNumber?: number | null;
+  isAvailable?: boolean;
+  connectionState?: RobotConnectionState;
+  leftEncoderCount?: number | null;
+  rightEncoderCount?: number | null;
+  mpu6050?: Mpu6050Readings | null;
+  leftRpm?: number | null;
+  rightRpm?: number | null;
+  speedMps?: number | null;
+  estimatedDistanceMeters?: number | null;
+  isStale?: boolean;
+  notes?: string | null;
+}
+
+export interface TelemetryFilter extends PaginationParams {
+  inspectionId?: string;
+  fromTimestamp?: string;
+  toTimestamp?: string;
+}
+
+export interface BatchIngestResult {
+  insertedCount: number;
+  duplicateCount: number;
+}
+
+export interface TelemetrySessionSummary {
+  inspectionId: string;
+  sampleCount: number;
+  totalDistanceMeters: number | null;
+  maxSpeedMps: number | null;
+  avgSpeedMps: number | null;
+  maxPitchDeg: number | null;
+  minPitchDeg: number | null;
+  maxRollDeg: number | null;
+  minRollDeg: number | null;
+  startTimestamp: string | null;
+  endTimestamp: string | null;
+}
+

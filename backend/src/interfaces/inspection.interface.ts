@@ -25,11 +25,14 @@ export interface InspectionRecord {
   startTimestamp: string; // ISO 8601
   endTimestamp?: string;   // ISO 8601
   durationSeconds?: number;
-  totalDistanceMeters: number;
+  totalDistanceMeters: number | null; // null when odometry is uncalibrated/unmeasured
   defectCount: number;
   status: InspectionLifecycleState;
   reportGenerated: boolean;
   backupVerified: boolean;
+  backupStatus?: 'not_started' | 'pending' | 'running' | 'completed' | 'failed';
+  backupId?: string | null;
+  backupError?: string | null;
   operatorNotes?: string;
 }
 
@@ -41,12 +44,15 @@ export interface CreateInspectionDTO {
 export interface UpdateInspectionDTO {
   conduitName?: string;
   operatorNotes?: string;
-  totalDistanceMeters?: number;
+  totalDistanceMeters?: number | null;
   defectCount?: number;
   endTimestamp?: string;
   durationSeconds?: number;
   reportGenerated?: boolean;
   backupVerified?: boolean;
+  backupStatus?: 'not_started' | 'pending' | 'running' | 'completed' | 'failed';
+  backupId?: string | null;
+  backupError?: string | null;
 }
 
 export interface InspectionFilter extends PaginationParams {

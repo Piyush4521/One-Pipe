@@ -55,7 +55,7 @@ export interface InspectionStatusEventPayload {
   status: InspectionLifecycleState;
   previousStatus?: InspectionLifecycleState;
   conduitName?: string;
-  totalDistanceMeters: number;
+  totalDistanceMeters: number | null;
   defectCount: number;
   timestamp: string;
 }
