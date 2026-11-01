@@ -28,8 +28,9 @@ export const LiveInspectionPage: FC = () => {
   });
 
   const isConnected = status === 'connected';
-  const effectiveLifecycle: InspectionLifecycleState =
-    inspectionState?.status || localState || (isConnected ? 'ready' : 'disconnected');
+  const effectiveLifecycle: InspectionLifecycleState = !isConnected
+    ? 'disconnected'
+    : (inspectionState?.status || localState);
 
   const handleStart = async () => {
     try {
@@ -44,9 +45,8 @@ export const LiveInspectionPage: FC = () => {
       }
       await api.inspections.updateStatus(id, 'running');
       setLocalState('running');
-    } catch {
-      // Offline fallback state update
-      setLocalState('running');
+    } catch (err) {
+      setStopAlert(err instanceof Error ? err.message : 'Failed to start inspection session');
     }
   };
 
@@ -54,10 +54,10 @@ export const LiveInspectionPage: FC = () => {
     try {
       if (activeSessionId) {
         await api.inspections.updateStatus(activeSessionId, 'paused');
+        setLocalState('paused');
       }
-      setLocalState('paused');
-    } catch {
-      setLocalState('paused');
+    } catch (err) {
+      setStopAlert(err instanceof Error ? err.message : 'Failed to pause inspection session');
     }
   };
 
@@ -65,10 +65,10 @@ export const LiveInspectionPage: FC = () => {
     try {
       if (activeSessionId) {
         await api.inspections.updateStatus(activeSessionId, 'completed');
+        setLocalState('completed');
       }
-      setLocalState('completed');
-    } catch {
-      setLocalState('completed');
+    } catch (err) {
+      setStopAlert(err instanceof Error ? err.message : 'Failed to complete inspection session');
     }
   };
 

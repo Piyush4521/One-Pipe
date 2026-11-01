@@ -111,7 +111,7 @@ export const OverviewPage: FC = () => {
     },
     {
       name: 'AI Inference Pipeline',
-      device: systemData?.subsystems?.gpuDeviceName || 'Ultralytics YOLO (RTX 2050)',
+      device: systemData?.subsystems?.gpuDeviceName || 'RTX 2050 (Awaiting Stage 4)',
       description: 'Defect detection models running on laptop GPU (4 GB VRAM).',
       status: aiStatus.status,
       statusLabel: aiStatus.label,
@@ -208,7 +208,7 @@ export const OverviewPage: FC = () => {
             Subsystem Status Indicators
           </h2>
           <span className="text-[11px] font-mono text-pipeblack-muted">
-            {systemData ? 'Live Backend Subsystem Telemetry Active' : 'Polling Backend Service (127.0.0.1:3000)...'}
+            {systemData ? 'Live Backend Diagnostics Active' : 'Polling Backend Service (127.0.0.1:3000)...'}
           </span>
         </div>
 
