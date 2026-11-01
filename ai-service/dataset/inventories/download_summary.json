@@ -1,0 +1,36 @@
+{
+  "dataset_name": "Pipe Defect Detection.v7 dataset pipe.yolov8",
+  "total_expected_records": 1916,
+  "total_verified_images": 1916,
+  "successful_downloads": 0,
+  "already_verified_reused": 1916,
+  "failed_downloads": 0,
+  "invalid_or_undecodable_images": 0,
+  "dimension_mismatches": 0,
+  "duplicate_content_hashes_count": 0,
+  "duplicate_content_hash_instances": 0,
+  "by_split": {
+    "test": {
+      "total_images": 63,
+      "annotated_images": 45,
+      "unannotated_images": 18,
+      "total_bytes": 1733172
+    },
+    "train": {
+      "total_images": 1727,
+      "annotated_images": 1146,
+      "unannotated_images": 581,
+      "total_bytes": 48746726
+    },
+    "val": {
+      "total_images": 126,
+      "annotated_images": 94,
+      "unannotated_images": 32,
+      "total_bytes": 3369454
+    }
+  },
+  "total_dataset_bytes_on_disk": 53849352,
+  "execution_duration_seconds": 0.61,
+  "manifest_file": "D:\\Pipe-Bot-2\\ai-service\\dataset\\inventories\\download_verification_manifest.json",
+  "failures_file": "D:\\Pipe-Bot-2\\ai-service\\dataset\\inventories\\download_failures.json"
+}

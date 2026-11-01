@@ -36,9 +36,18 @@ htmlcov/
 *.pth
 *.onnx
 *.engine
+ai/
+ai-service/.venv/
+ai-service/cache/
+ai-service/temp/
+ai-service/models/
 ai-service/runs/
-ai-service/dataset/images/
-ai-service/dataset/labels/
+ai-service/logs/
+ai-service/weights/
+ai-service/dataset/source_images/
+ai-service/dataset/derived_yolo/
+ai-service/dataset/yolo/
+ai-service/test_footage/
 
 # Embedded / Arduino / PlatformIO
 .pio/
