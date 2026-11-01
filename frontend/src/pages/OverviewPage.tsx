@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import { NavLink } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 import { Card, Button, Badge, StatusIndicator } from '@/components/ui';
@@ -14,40 +14,115 @@ import {
   ArrowRight,
   ShieldAlert,
   Inbox,
+  RefreshCw,
 } from 'lucide-react';
+import { api, type SystemStatusData } from '@/services/api';
+import type { InspectionSessionRecord, SubsystemStatus } from '@/types/inspection';
 
 export const OverviewPage: FC = () => {
+  const [systemData, setSystemData] = useState<SystemStatusData | null>(null);
+  const [recentInspections, setRecentInspections] = useState<InspectionSessionRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchOverviewData = async () => {
+    try {
+      const [statusRes, inspectionsRes] = await Promise.allSettled([
+        api.system.getStatus(),
+        api.inspections.list({ limit: 5 }),
+      ]);
+
+      if (statusRes.status === 'fulfilled') {
+        setSystemData(statusRes.value);
+      } else {
+        setSystemData(null);
+      }
+
+      if (inspectionsRes.status === 'fulfilled') {
+        setRecentInspections(inspectionsRes.value.items || []);
+      } else {
+        setRecentInspections([]);
+      }
+    } catch {
+      setSystemData(null);
+      setRecentInspections([]);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOverviewData();
+    const timer = setInterval(fetchOverviewData, 8000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    fetchOverviewData();
+  };
+
+  const getSubsystemStatus = (
+    key: 'esp32' | 'camera' | 'aiEngine' | 'database',
+    defaultLabel: string
+  ): { status: SubsystemStatus; label: string } => {
+    if (!systemData?.subsystems) {
+      return { status: 'offline', label: defaultLabel };
+    }
+    const st = systemData.subsystems[key];
+    if (key === 'database' && st === 'healthy') {
+      const pingText = systemData.subsystems.databasePingMs != null
+        ? ` (${systemData.subsystems.databasePingMs.toFixed(1)}ms)`
+        : '';
+      return { status: 'healthy', label: `Connected${pingText}` };
+    }
+    const labelMap: Record<SubsystemStatus, string> = {
+      healthy: 'Operational',
+      warning: 'Warning / Degraded',
+      critical: 'Critical Error',
+      offline: defaultLabel,
+      unknown: 'Status Unknown',
+    };
+    return { status: st, label: labelMap[st] || defaultLabel };
+  };
+
+  const esp32Status = getSubsystemStatus('esp32', 'Awaiting Link');
+  const cameraStatus = getSubsystemStatus('camera', 'Not Connected');
+  const aiStatus = getSubsystemStatus('aiEngine', 'Dormant');
+  const dbStatus = getSubsystemStatus('database', 'Local Link Pending');
+
   const subsystems = [
     {
       name: 'Hardware Controller',
       device: 'ESP32-WROOM-32 DevKit V1',
       description: 'Motor drivers, wheel encoders, and MPU6050 IMU telemetry link.',
-      status: 'offline' as const,
-      statusLabel: 'Awaiting Link',
+      status: esp32Status.status,
+      statusLabel: esp32Status.label,
       icon: Cpu,
     },
     {
       name: 'Optical Camera Subsystem',
       device: 'Raspberry Pi Zero 2 W',
       description: 'Direct camera stream ingestion over local private Wi-Fi.',
-      status: 'offline' as const,
-      statusLabel: 'Not Connected',
+      status: cameraStatus.status,
+      statusLabel: cameraStatus.label,
       icon: Camera,
     },
     {
       name: 'AI Inference Pipeline',
-      device: 'Ultralytics YOLO (RTX 2050)',
+      device: systemData?.subsystems?.gpuDeviceName || 'Ultralytics YOLO (RTX 2050)',
       description: 'Defect detection models running on laptop GPU (4 GB VRAM).',
-      status: 'offline' as const,
-      statusLabel: 'Dormant',
+      status: aiStatus.status,
+      statusLabel: aiStatus.label,
       icon: Layers,
     },
     {
       name: 'Local Persistence Engine',
-      device: 'MongoDB Community Server',
-      description: 'Offline local database for inspection metadata, defects, and logs.',
-      status: 'offline' as const,
-      statusLabel: 'Local Link Pending',
+      device: systemData ? `MongoDB (${systemData.storage.driver})` : 'MongoDB Community Server',
+      description: systemData?.storage?.limitation || 'Offline local database for inspection metadata, defects, and logs.',
+      status: dbStatus.status,
+      statusLabel: dbStatus.label,
       icon: Database,
     },
   ];
@@ -83,21 +158,47 @@ export const OverviewPage: FC = () => {
     },
   ];
 
+  const formatDistance = (dist: number | null): string => {
+    if (dist === null) return 'Uncalibrated';
+    return `${dist.toFixed(2)} m`;
+  };
+
+  const formatDate = (iso: string): string => {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return iso;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Description */}
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Badge variant="yellow">Operator Station</Badge>
-          <span className="text-xs font-mono text-pipeblack-muted">Single-Operator Offline Architecture</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="yellow">Operator Station</Badge>
+            <span className="text-xs font-mono text-pipeblack-muted">Single-Operator Offline Architecture</span>
+          </div>
+          <h1 className="text-xl md:text-2xl font-bold uppercase tracking-tight text-pipeblack">
+            System Overview & Readiness
+          </h1>
+          <p className="text-xs md:text-sm text-pipeblack-muted mt-1 max-w-3xl">
+            Monitors subsystem link readiness, hardware status, and inspection session state.
+            All services run locally on the operator laptop without requiring cloud dependencies.
+          </p>
         </div>
-        <h1 className="text-xl md:text-2xl font-bold uppercase tracking-tight text-pipeblack">
-          System Overview & Readiness
-        </h1>
-        <p className="text-xs md:text-sm text-pipeblack-muted mt-1 max-w-3xl">
-          Monitors subsystem link readiness, hardware status, and inspection session state.
-          All services run locally on the operator laptop without requiring cloud dependencies.
-        </p>
+
+        <button
+          type="button"
+          onClick={handleManualRefresh}
+          disabled={isRefreshing}
+          className="self-start sm:self-auto px-3 py-1.5 bg-white border border-pipeborder rounded-sm hover:bg-cream-100 text-xs font-mono text-pipeblack flex items-center gap-1.5 transition-colors shadow-industrial-subtle"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span>Sync Status</span>
+        </button>
       </div>
 
       {/* Subsystem Health Grid */}
@@ -107,7 +208,7 @@ export const OverviewPage: FC = () => {
             Subsystem Status Indicators
           </h2>
           <span className="text-[11px] font-mono text-pipeblack-muted">
-            Status checks will activate with backend services in Stage 2
+            {systemData ? 'Live Backend Subsystem Telemetry Active' : 'Polling Backend Service (127.0.0.1:3000)...'}
           </span>
         </div>
 
@@ -142,8 +243,11 @@ export const OverviewPage: FC = () => {
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-pipeborder/60 text-[10px] font-mono text-pipeblack-subtle uppercase">
-                  Interface: Local Socket / HTTP
+                <div className="mt-4 pt-3 border-t border-pipeborder/60 text-[10px] font-mono text-pipeblack-subtle uppercase flex items-center justify-between">
+                  <span>Interface: Local Socket / HTTP</span>
+                  {subsystem.status === 'healthy' && (
+                    <span className="text-pipestatus-healthy font-bold">ONLINE</span>
+                  )}
                 </div>
               </div>
             );
@@ -211,15 +315,59 @@ export const OverviewPage: FC = () => {
         <div className="lg:col-span-2">
           <Card
             title="Recent Inspection Activity"
-            description="Inspection run history will populate from local MongoDB storage"
+            description={
+              systemData
+                ? `Populated from local MongoDB (${recentInspections.length} recorded session${recentInspections.length === 1 ? '' : 's'})`
+                : 'Inspection run history will populate from local MongoDB storage'
+            }
           >
-            <div className="py-8 flex flex-col items-center justify-center text-center gap-2 text-pipeblack-muted">
-              <Inbox className="w-8 h-8 text-pipeblack-subtle" />
-              <span className="text-xs font-mono font-medium">No recent inspection sessions recorded</span>
-              <p className="text-xs text-pipeblack-subtle max-w-sm">
-                Completed inspection runs, total travel distance, and defect counts will be cataloged here once sessions are executed.
-              </p>
-            </div>
+            {isLoading ? (
+              <div className="py-8 flex items-center justify-center text-xs font-mono text-pipeblack-muted">
+                Checking persistence engine...
+              </div>
+            ) : recentInspections.length > 0 ? (
+              <div className="divide-y divide-pipeborder/60">
+                {recentInspections.map((insp) => (
+                  <div key={insp.id} className="py-2.5 flex items-center justify-between text-xs font-mono">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-pipeblack">{insp.id}</span>
+                        {insp.conduitName && (
+                          <span className="text-[10px] bg-cream-100 px-1.5 py-0.5 border border-pipeborder text-pipeblack-muted">
+                            {insp.conduitName}
+                          </span>
+                        )}
+                        <Badge variant={insp.status === 'completed' ? 'neutral' : 'warning'}>
+                          {insp.status}
+                        </Badge>
+                      </div>
+                      <span className="text-[10px] text-pipeblack-muted block">
+                        Started: {formatDate(insp.startTimestamp)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-right">
+                      <div>
+                        <span className="text-[10px] text-pipeblack-muted block">Distance</span>
+                        <span className="font-bold text-pipeblack">{formatDistance(insp.totalDistanceMeters)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-pipeblack-muted block">Defects</span>
+                        <span className="font-bold text-pipestatus-critical">{insp.defectCount}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 flex flex-col items-center justify-center text-center gap-2 text-pipeblack-muted">
+                <Inbox className="w-8 h-8 text-pipeblack-subtle" />
+                <span className="text-xs font-mono font-medium">No recent inspection sessions recorded</span>
+                <p className="text-xs text-pipeblack-subtle max-w-sm">
+                  Completed inspection runs, total travel distance, and defect counts will be cataloged here once sessions are executed.
+                </p>
+              </div>
+            )}
           </Card>
         </div>
       </div>

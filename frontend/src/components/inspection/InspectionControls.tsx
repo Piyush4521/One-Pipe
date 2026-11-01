@@ -9,6 +9,9 @@ import { cn } from '@/lib/utils';
 export interface InspectionControlsProps {
   lifecycleState?: InspectionLifecycleState;
   isBackendConnected?: boolean;
+  onStart?: () => void;
+  onPause?: () => void;
+  onComplete?: () => void;
   className?: string;
 }
 
@@ -23,6 +26,9 @@ export interface InspectionControlsProps {
 export const InspectionControls: FC<InspectionControlsProps> = ({
   lifecycleState = 'disconnected',
   isBackendConnected = false,
+  onStart,
+  onPause,
+  onComplete,
   className,
 }) => {
   const stateLabels: Record<InspectionLifecycleState, { label: string; badge: 'neutral' | 'success' | 'warning' | 'critical' }> = {
@@ -56,12 +62,13 @@ export const InspectionControls: FC<InspectionControlsProps> = ({
         </div>
       </div>
 
-      {/* Lifecycle Action Buttons (Disabled in Stage 1) */}
+      {/* Lifecycle Action Buttons */}
       <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
         <Button
           variant="primary"
           size="sm"
           disabled={!isBackendConnected || lifecycleState === 'running'}
+          onClick={onStart}
           leftIcon={<Play className="w-3.5 h-3.5" />}
         >
           Start
@@ -71,6 +78,7 @@ export const InspectionControls: FC<InspectionControlsProps> = ({
           variant="outline"
           size="sm"
           disabled={!isBackendConnected || lifecycleState !== 'running'}
+          onClick={onPause}
           leftIcon={<Pause className="w-3.5 h-3.5" />}
         >
           Pause
@@ -80,6 +88,7 @@ export const InspectionControls: FC<InspectionControlsProps> = ({
           variant="outline"
           size="sm"
           disabled={!isBackendConnected || (lifecycleState !== 'running' && lifecycleState !== 'paused')}
+          onClick={onComplete}
           leftIcon={<CheckSquare className="w-3.5 h-3.5" />}
         >
           Complete Run

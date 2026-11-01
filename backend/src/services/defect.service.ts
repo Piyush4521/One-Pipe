@@ -6,6 +6,7 @@
 import {
   DefectFilter,
   DefectRecord,
+  DefectStats,
   UpdateDefectReviewDTO,
 } from '../interfaces/defect.interface';
 import { PaginatedResult } from '../interfaces/pagination.interface';
@@ -28,6 +29,10 @@ export class DefectService {
 
   public async listDefects(filter: DefectFilter): Promise<PaginatedResult<DefectRecord>> {
     return this.repository.findMany(filter);
+  }
+
+  public async getStats(): Promise<DefectStats> {
+    return this.repository.getStats();
   }
 
   public async updateReview(id: string, data: UpdateDefectReviewDTO): Promise<DefectRecord> {

@@ -58,3 +58,29 @@ export const telemetrySnapshotSchema = z
 
 export type ValidatedTelemetrySnapshot = z.infer<typeof telemetrySnapshotSchema>;
 
+export const telemetrySampleDtoSchema = z.object({
+  sampleId: z.string().trim().optional(),
+  inspectionId: z.string().trim().nullable().optional(),
+  captureTimestamp: z
+    .string()
+    .datetime({ message: 'captureTimestamp must be a valid ISO 8601 string' })
+    .optional(),
+  sequenceNumber: finiteIntOrNull.optional(),
+  isAvailable: z.boolean().optional(),
+  connectionState: z.enum(['disconnected', 'connecting', 'connected', 'error']).optional(),
+  leftEncoderCount: finiteIntOrNull.optional(),
+  rightEncoderCount: finiteIntOrNull.optional(),
+  leftRpm: finiteNumberOrNull.optional(),
+  rightRpm: finiteNumberOrNull.optional(),
+  speedMps: finiteNumberOrNull.optional(),
+  estimatedDistanceMeters: finiteNumberOrNull.optional(),
+  mpu6050: mpu6050Schema.optional(),
+  isStale: z.boolean().optional(),
+  notes: z.string().max(1000).nullable().optional(),
+});
+
+export const telemetryBatchDtoSchema = z.object({
+  samples: z.array(telemetrySampleDtoSchema).min(1, 'At least one sample is required').max(500, 'Batch size cannot exceed 500 samples'),
+});
+
+

@@ -17,6 +17,15 @@ export class DefectController {
     }
   }
 
+  public async getStats(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const stats = await defectService.getStats();
+      sendSuccess(res, stats, 200);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   public async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const defect = await defectService.getDefectById(req.params.id as string);

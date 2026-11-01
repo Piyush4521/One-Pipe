@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import {
   DefectFilter,
   DefectRecord,
+  DefectStats,
   UpdateDefectReviewDTO,
 } from '../../interfaces/defect.interface';
 import { PaginatedResult } from '../../interfaces/pagination.interface';
@@ -33,8 +34,13 @@ export class MemoryDefectRepository implements IDefectRepository {
       items = items.filter((item) => item.classId === filter.classId);
     }
 
-    // Sort by estimatedDistance ascending
-    items.sort((a, b) => a.estimatedDistance - b.estimatedDistance);
+    // Sort by estimatedDistance ascending; nulls placed last
+    items.sort((a, b) => {
+      if (a.estimatedDistance === null && b.estimatedDistance === null) return 0;
+      if (a.estimatedDistance === null) return 1;
+      if (b.estimatedDistance === null) return -1;
+      return a.estimatedDistance - b.estimatedDistance;
+    });
 
     const total = items.length;
     const page = Math.max(1, filter.page || 1);
@@ -78,6 +84,43 @@ export class MemoryDefectRepository implements IDefectRepository {
 
     this.records.set(id, updated);
     return updated;
+  }
+
+  public async updateEvidenceMetadata(
+    id: string,
+    metadata: {
+      evidenceImagePath: string;
+      evidenceFileSizeBytes: number;
+      evidenceSha256: string;
+      evidenceMimeType: string;
+    }
+  ): Promise<DefectRecord | null> {
+    const existing = this.records.get(id);
+    if (!existing) {
+      return null;
+    }
+
+    const updated: DefectRecord = {
+      ...existing,
+      evidenceImagePath: metadata.evidenceImagePath,
+      evidenceFileSizeBytes: metadata.evidenceFileSizeBytes,
+      evidenceSha256: metadata.evidenceSha256,
+      evidenceMimeType: metadata.evidenceMimeType,
+    };
+
+    this.records.set(id, updated);
+    return updated;
+  }
+
+  public async getStats(): Promise<DefectStats> {
+    const items = Array.from(this.records.values());
+    return {
+      total: items.length,
+      unreviewed: items.filter((d) => d.reviewStatus === 'UNREVIEWED').length,
+      confirmed: items.filter((d) => d.reviewStatus === 'CONFIRMED').length,
+      falsePositive: items.filter((d) => d.reviewStatus === 'FALSE_POSITIVE').length,
+      needsVerification: items.filter((d) => d.reviewStatus === 'NEEDS_VERIFICATION').length,
+    };
   }
 
   public clear(): void {

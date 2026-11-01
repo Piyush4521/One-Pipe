@@ -16,6 +16,7 @@ describe('Test-Only In-Memory Repositories', () => {
       expect(created.id).toBeDefined();
       expect(created.conduitName).toBe('Conduit-Alpha');
       expect(created.status).toBe('ready');
+      expect(created.totalDistanceMeters).toBeNull();
 
       const found = await repo.findById(created.id);
       expect(found).toEqual(created);

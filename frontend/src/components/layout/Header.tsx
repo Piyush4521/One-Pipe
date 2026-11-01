@@ -1,10 +1,31 @@
-import type { FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 import { StatusIndicator } from '@/components/ui/StatusIndicator';
+import { api, type SystemStatusData } from '@/services/api';
 
 export const Header: FC = () => {
   const location = useLocation();
+  const [systemStatus, setSystemStatus] = useState<SystemStatusData | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const probe = async () => {
+      try {
+        const res = await api.system.getStatus();
+        if (isMounted) setSystemStatus(res);
+      } catch {
+        if (isMounted) setSystemStatus(null);
+      }
+    };
+
+    probe();
+    const interval = setInterval(probe, 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const getPageTitle = (pathname: string): { title: string; category: string } => {
     switch (pathname) {
@@ -27,6 +48,12 @@ export const Header: FC = () => {
 
   const { title, category } = getPageTitle(location.pathname);
 
+  const esp32Status = systemStatus?.subsystems.esp32 ?? 'offline';
+  const cameraStatus = systemStatus?.subsystems.camera ?? 'offline';
+  const aiStatus = systemStatus?.subsystems.aiEngine ?? 'offline';
+  const dbStatus = systemStatus?.subsystems.database ?? 'offline';
+  const isBackendAlive = Boolean(systemStatus);
+
   return (
     <header className="h-16 bg-white border-b border-pipeborder px-4 md:px-6 flex items-center justify-between gap-4 shrink-0 z-20">
       {/* Title & Context */}
@@ -45,38 +72,48 @@ export const Header: FC = () => {
         </h2>
       </div>
 
-      {/* Honest Subsystem Indicators (Neutral / Awaiting Connection) */}
+      {/* Subsystem Indicators */}
       <div className="hidden sm:flex items-center gap-2 text-xs">
         <div className="px-2.5 py-1 bg-cream-100 border border-pipeborder rounded-sm">
           <StatusIndicator
-            status="offline"
+            status={isBackendAlive ? 'healthy' : 'offline'}
             size="sm"
-            label="ESP32: Awaiting Link"
+            label={isBackendAlive ? 'Host: 127.0.0.1:3000' : 'Host: Offline'}
           />
         </div>
         <div className="px-2.5 py-1 bg-cream-100 border border-pipeborder rounded-sm">
           <StatusIndicator
-            status="offline"
+            status={esp32Status}
             size="sm"
-            label="Camera: Not Connected"
+            label={esp32Status === 'healthy' ? 'ESP32: Linked' : 'ESP32: Awaiting Link'}
+          />
+        </div>
+        <div className="px-2.5 py-1 bg-cream-100 border border-pipeborder rounded-sm">
+          <StatusIndicator
+            status={cameraStatus}
+            size="sm"
+            label={cameraStatus === 'healthy' ? 'Camera: Online' : 'Camera: Offline'}
           />
         </div>
         <div className="hidden lg:flex px-2.5 py-1 bg-cream-100 border border-pipeborder rounded-sm">
           <StatusIndicator
-            status="offline"
+            status={aiStatus}
             size="sm"
-            label="AI: Dormant"
+            label={aiStatus === 'healthy' ? 'AI: Active' : 'AI: Dormant'}
           />
         </div>
         <div className="hidden xl:flex px-2.5 py-1 bg-cream-100 border border-pipeborder rounded-sm">
           <StatusIndicator
-            status="offline"
+            status={dbStatus}
             size="sm"
-            label="DB: Unlinked"
+            label={
+              dbStatus === 'healthy'
+                ? `DB: Connected${systemStatus?.subsystems.databasePingMs != null ? ` (${systemStatus.subsystems.databasePingMs.toFixed(0)}ms)` : ''}`
+                : 'DB: Unlinked'
+            }
           />
         </div>
       </div>
     </header>
   );
 };
-

@@ -11,6 +11,7 @@ export interface SubsystemStatusSnapshot {
   camera: SubsystemStatus;
   aiEngine: SubsystemStatus;
   database: SubsystemStatus;
+  databasePingMs?: number | null;
   gpuDeviceName: string | null;
   isGpuAvailable: boolean;
   lastChecked: string;
@@ -20,6 +21,7 @@ export interface StorageEngineInfo {
   driver: string;
   isPersistent: boolean;
   limitation: string;
+  storageRoot?: string;
 }
 
 export interface SubsystemDetails {
@@ -44,4 +46,11 @@ export interface HealthzData {
   timestamp: string;
   version: string;
   environment: string;
+}
+
+export interface ReadyzData {
+  status: 'ready' | 'not_ready';
+  database: 'connected' | 'disconnected' | 'unconfigured';
+  storageDriver: string;
+  timestamp: string;
 }

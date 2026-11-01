@@ -72,7 +72,7 @@ export interface TelemetrySnapshot {
  */
 export interface TimelineDefectMarker {
   id: string;
-  estimatedDistance: number; // meters from inspection start
+  estimatedDistance: number | null; // meters from inspection start (null when uncalibrated)
   className: string;
   confidence: number;
   timestamp?: string;
@@ -80,7 +80,7 @@ export interface TimelineDefectMarker {
 
 /**
  * Defect Evidence Record Document (Rulebook § 14.3, 16.4)
- * Maps to future MongoDB `defects` collection
+ * Maps to MongoDB `defects` collection
  */
 export interface DefectEvidenceRecord {
   id: string;
@@ -88,18 +88,27 @@ export interface DefectEvidenceRecord {
   classId: number;
   className: string;
   confidence: number;
-  estimatedDistance: number; // Estimated from frame capture time and encoder sync
+  estimatedDistance: number | null; // Calculated odometry distance in meters; null when uncalibrated
   frameId: string;
   frameCaptureTimestamp: string;
   inferenceTimestamp?: string;
   reviewStatus: 'UNREVIEWED' | 'CONFIRMED' | 'FALSE_POSITIVE' | 'NEEDS_VERIFICATION';
   evidenceImagePath: string;
+  evidenceFileSizeBytes?: number | null;
+  evidenceSha256?: string | null;
+  evidenceMimeType?: string | null;
   operatorNotes?: string;
+  boundingBox?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null;
 }
 
 /**
  * Inspection Session Document (Rulebook § 9, 16.4)
- * Maps to future MongoDB `inspections` collection
+ * Maps to MongoDB `inspections` collection
  */
 export interface InspectionSessionRecord {
   id: string;
@@ -107,11 +116,14 @@ export interface InspectionSessionRecord {
   startTimestamp: string;
   endTimestamp?: string;
   durationSeconds?: number;
-  totalDistanceMeters: number;
+  totalDistanceMeters: number | null; // null when odometry is uncalibrated/unmeasured
   defectCount: number;
   status: InspectionLifecycleState;
   reportGenerated: boolean;
   backupVerified: boolean;
+  backupStatus?: 'not_started' | 'pending' | 'running' | 'completed' | 'failed';
+  backupId?: string | null;
+  backupError?: string | null;
   operatorNotes?: string;
 }
 
@@ -121,10 +133,14 @@ export interface InspectionSessionRecord {
 export interface ConsolidatedReportRecord {
   id: string;
   inspectionId: string;
-  compiledTimestamp: string;
-  fileSizeBytes: number;
-  totalDistanceMeters: number;
-  defectCount: number;
-  pdfRelativePath: string;
+  status?: 'pending' | 'generating' | 'completed' | 'failed';
+  compiledTimestamp: string | null;
+  fileSizeBytes: number | null;
+  totalDistanceMeters: number | null;
+  defectCount: number | null;
+  pdfRelativePath: string | null;
+  pdfSha256?: string | null;
   backupVerified: boolean;
+  errorMessage?: string;
+  note?: string;
 }

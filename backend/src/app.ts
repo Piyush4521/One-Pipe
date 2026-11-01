@@ -6,7 +6,7 @@
 import cors from 'cors';
 import express, { Application } from 'express';
 import helmet from 'helmet';
-import { MAX_JSON_BODY_SIZE } from './config/constants';
+import { MAX_JSON_BODY_SIZE, isPermittedLocalOrigin } from './config/constants';
 import { env } from './config/env';
 import { systemController } from './controllers/system.controller';
 import { errorMiddleware } from './middleware/error.middleware';
@@ -29,7 +29,7 @@ export function createApp(): Application {
         if (!requestOrigin) {
           return callback(null, true);
         }
-        if (env.CORS_ORIGINS.includes(requestOrigin)) {
+        if (env.CORS_ORIGINS.includes(requestOrigin) || isPermittedLocalOrigin(requestOrigin)) {
           return callback(null, true);
         }
         return callback(new Error(`CORS policy violation: origin '${requestOrigin}' not allowed.`));
@@ -47,8 +47,9 @@ export function createApp(): Application {
   // 5. JSON Body Parser with strict payload size limit
   app.use(express.json({ limit: MAX_JSON_BODY_SIZE }));
 
-  // 6. Root Health Probe (Process Liveness)
+  // 6. Root Health & Readiness Probes
   app.get('/healthz', (req, res) => systemController.getHealthz(req, res));
+  app.get('/readyz', (req, res) => systemController.getReadyz(req, res));
 
   // 7. Master API Routes (/api/*)
   app.use('/api', apiRouter);

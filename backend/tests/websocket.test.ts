@@ -140,7 +140,7 @@ describe('WebSocket Server Foundation & Protocol Integration', () => {
     const msg3 = await client.nextMessage();
     expect(msg3.type).toBe('system.status');
     expect((msg3.payload as any).process).toBe('alive');
-    expect((msg3.payload as any).storage.driver).toBe('volatile_memory_testbed');
+    expect((msg3.payload as any).storage.driver).toBe('mongodb');
 
     // 4. robot.telemetry (truthfully unavailable)
     const msg4 = await client.nextMessage();

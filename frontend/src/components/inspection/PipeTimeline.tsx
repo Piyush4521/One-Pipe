@@ -57,13 +57,17 @@ export const PipeTimeline: FC<PipeTimelineProps> = ({
 
               {/* Defect Markers */}
               {defects.map((defect) => {
-                const pos = Math.max(0, Math.min(100, (defect.estimatedDistance / maxDistance) * 100));
+                const distanceVal = defect.estimatedDistance ?? 0;
+                const pos = Math.max(0, Math.min(100, (distanceVal / maxDistance) * 100));
+                const distText = defect.estimatedDistance !== null
+                  ? `~${defect.estimatedDistance.toFixed(2)}m`
+                  : 'Uncalibrated';
                 return (
                   <div
                     key={defect.id}
                     style={{ left: `${pos}%` }}
                     className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group cursor-pointer z-10"
-                    title={`${defect.className} at ~${defect.estimatedDistance.toFixed(2)}m (${Math.round(defect.confidence * 100)}% conf)`}
+                    title={`${defect.className} at ${distText} (${Math.round(defect.confidence * 100)}% conf)`}
                   >
                     <MapPin className="w-4 h-4 text-pipestatus-critical fill-pipestatus-critical" />
                   </div>

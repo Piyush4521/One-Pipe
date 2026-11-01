@@ -1,20 +1,31 @@
 import request from 'supertest';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../src/app';
 import { env } from '../src/config/env';
 import {
   defectRepository,
   inspectionRepository,
   reportRepository,
+  setStorageDriverForTesting,
 } from '../src/services/container';
 
 const OPERATOR_TOKEN = env.OPERATOR_TOKEN;
 
 describe('Stage 2 REST API Implementation Tests', () => {
+  beforeAll(() => {
+    // Explicitly select memory driver for isolated Stage 2 REST unit tests
+    setStorageDriverForTesting('memory');
+  });
+
+  afterAll(() => {
+    // Reset back to default mongodb driver
+    setStorageDriverForTesting('mongodb');
+  });
+
   beforeEach(() => {
-    inspectionRepository.clear();
-    defectRepository.clear();
-    reportRepository.clear();
+    inspectionRepository.clear?.();
+    defectRepository.clear?.();
+    reportRepository.clear?.();
   });
 
   describe('Robot & Safety Endpoints', () => {
@@ -96,7 +107,7 @@ describe('Stage 2 REST API Implementation Tests', () => {
       expect(res.body.data.id).toBeDefined();
       expect(res.body.data.conduitName).toBe('Storm Drain A-1');
       expect(res.body.data.status).toBe('ready');
-      expect(res.body.data.totalDistanceMeters).toBe(0);
+      expect(res.body.data.totalDistanceMeters).toBeNull();
       expect(res.body.data.defectCount).toBe(0);
     });
 

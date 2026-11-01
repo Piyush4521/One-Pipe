@@ -7,20 +7,22 @@ import { cn } from '@/lib/utils';
 export interface EmergencyStopButtonProps {
   className?: string;
   isBackendConnected?: boolean;
+  onEmergencyStop?: () => Promise<void> | void;
+  isTriggering?: boolean;
 }
 
 /**
  * Software Emergency Stop UI
  *
  * In accordance with Rules/PipeBot_Build_Rulebook.md § 10.2:
- * - Software Emergency Stop: Not connected in Stage 1.
- * - No software stop command can currently be sent.
- * - The dedicated physical emergency stop is the independent hardware safety mechanism that directly isolates motor drive power.
- * - The software stop is only a planned secondary request to be implemented after backend integration and hardware safety verification.
- * - The control remains strictly disabled.
+ * - Software Emergency Stop provides secondary command-level shutdown via backend.
+ * - The dedicated physical emergency stop on the chassis remains the independent primary safety mechanism.
  */
 export const EmergencyStopButton: FC<EmergencyStopButtonProps> = ({
   className,
+  isBackendConnected = false,
+  onEmergencyStop,
+  isTriggering = false,
 }) => {
   return (
     <div
@@ -36,17 +38,24 @@ export const EmergencyStopButton: FC<EmergencyStopButtonProps> = ({
             Software Emergency Stop
           </span>
         </div>
-        <Badge variant="critical">Not Connected</Badge>
+        <Badge variant={isBackendConnected ? 'critical' : 'neutral'}>
+          {isBackendConnected ? 'Armed' : 'Not Connected'}
+        </Badge>
       </div>
 
-      {/* Prominent High-Visibility Stop Control (Strictly Disabled in Stage 1) */}
+      {/* Prominent High-Visibility Stop Control */}
       <Button
         variant="danger"
         size="lg"
-        disabled
+        disabled={!isBackendConnected || isTriggering}
+        onClick={onEmergencyStop}
         className="w-full text-sm font-bold tracking-wider uppercase font-mono h-12 shadow-industrial"
       >
-        SOFTWARE STOP (NOT CONNECTED)
+        {isTriggering
+          ? 'TRIGGERING EMERGENCY STOP...'
+          : isBackendConnected
+          ? 'EMERGENCY STOP (ARMED)'
+          : 'SOFTWARE STOP (NOT CONNECTED)'}
       </Button>
 
       {/* Explicit Safety Notice */}
@@ -55,11 +64,13 @@ export const EmergencyStopButton: FC<EmergencyStopButtonProps> = ({
           <div className="flex items-start gap-1.5 text-pipeblack">
             <ShieldAlert className="w-4 h-4 text-pipestatus-critical shrink-0 mt-0.5" />
             <span className="font-bold font-mono uppercase">
-              No Software Stop Command Can Currently Be Sent
+              {isBackendConnected ? 'Software Halt Armed' : 'No Software Stop Command Can Currently Be Sent'}
             </span>
           </div>
           <p>
-            The software emergency stop is a planned secondary request that will only become operational after the Node.js backend and ESP32 command watchdog are integrated and validated in Stage 3.
+            {isBackendConnected
+              ? 'Clicking Emergency Stop transmits an immediate halt directive to the backend command queue and logs a critical safety event.'
+              : 'The software emergency stop requires an active backend link. All robot movement commands remain disabled.'}
           </p>
           <div className="flex items-start gap-1.5 text-pipeblack pt-1 border-t border-pipeborder/60">
             <ShieldCheck className="w-4 h-4 text-pipeyellow-hover shrink-0 mt-0.5" />
@@ -70,7 +81,7 @@ export const EmergencyStopButton: FC<EmergencyStopButtonProps> = ({
         </div>
 
         <div className="text-[10px] font-mono text-pipeblack-subtle flex items-center justify-between">
-          <span>Backend Stop Path: Unlinked</span>
+          <span>Backend Stop Path: {isBackendConnected ? 'Linked (HTTP / WS)' : 'Unlinked'}</span>
           <span>Physical Chassis Stop: Primary</span>
         </div>
       </div>

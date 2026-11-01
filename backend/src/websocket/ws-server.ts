@@ -12,6 +12,7 @@ import {
   WS_MAX_MESSAGE_PAYLOAD_BYTES,
   WS_PATH,
   WS_TRANSPORT_PING_INTERVAL_MS,
+  isPermittedLocalOrigin,
 } from '../config/constants';
 import { env } from '../config/env';
 import { healthService } from '../services/health.service';
@@ -91,7 +92,7 @@ export class PipeBotWsServer {
     // Origin header allowlist validation
     const origin = req.headers.origin;
     if (origin) {
-      const isAllowed = env.CORS_ORIGINS.includes(origin);
+      const isAllowed = env.CORS_ORIGINS.includes(origin) || isPermittedLocalOrigin(origin);
       if (!isAllowed) {
         logger.warn(
           { origin, allowedOrigins: env.CORS_ORIGINS },

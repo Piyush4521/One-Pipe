@@ -55,3 +55,17 @@ firmware/build/
 !.vscode/extensions.json
 .idea/
 
+# Local Storage, Evidence Binaries & Backups
+storage/
+backend/storage/
+backups/
+backend/backups/
+*.tmp
+*.bak
+*.swp
+backend/dist/
+frontend/dist/
+backend/coverage/
+frontend/coverage/
+
+

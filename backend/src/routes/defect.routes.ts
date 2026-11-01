@@ -16,6 +16,9 @@ router.get('/', validateQuery(defectQuerySchema), (req, res, next) =>
   defectController.list(req, res, next)
 );
 
+// GET /api/defects/stats - Read-only defect statistics breakdown
+router.get('/stats', (req, res, next) => defectController.getStats(req, res, next));
+
 // GET /api/defects/:id - Read-only single defect details
 router.get('/:id', (req, res, next) => defectController.getById(req, res, next));
 
